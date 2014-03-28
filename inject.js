@@ -1,5 +1,5 @@
 $(function() {
   $(document).bind('textselect', function(e) {
-    alert(e.text);
+    chrome.runtime.sendMessage({'bgg_search': e.text});
   });
 });

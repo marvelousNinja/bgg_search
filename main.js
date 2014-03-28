@@ -1,0 +1,1 @@
+alert("Main script loaded!");

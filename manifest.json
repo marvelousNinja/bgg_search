@@ -1,0 +1,16 @@
+{
+  "manifest_version": 2,
+
+  "name": "BGG Search",
+  "description": "View BGG ratings right away!",
+  "version": "0.1",
+
+  "permissions": [
+    "notifications",
+    "background",
+    "<all_urls>"
+  ],
+  "background": {
+    "scripts": ["main.js"]
+  }
+}

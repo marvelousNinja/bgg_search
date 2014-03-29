@@ -1,4 +1,3 @@
-idCounter = 0;
 chrome.runtime.onMessage.addListener(function(request) {
   searchTerm = request.bgg.searchTerm;
 
@@ -9,12 +8,11 @@ chrome.runtime.onMessage.addListener(function(request) {
     iconUrl: "icon.png"
   }
 
-  notificationId = idCounter++;
-
-  chrome.notifications.create('' + notificationId, opt, function() {});
+  notificationId = '';
+  chrome.notifications.create('', opt, function(id) { notificationId = id });
 
   $.get("http://www.boardgamegeek.com/xmlapi/search",
-    { "search": searchTerm },
+    { search: searchTerm },
     function(response) {
       nodeList = response.querySelectorAll('boardgame');
 
@@ -23,7 +21,7 @@ chrome.runtime.onMessage.addListener(function(request) {
       for(var i = nodeList.length; i--; ids.unshift(nodeList[i].getAttribute('objectid')));
 
       $.get("http://www.boardgamegeek.com/xmlapi/boardgame/" + ids.join(),
-        { "stats": 1 },
+        { stats: 1 },
         function(response) {
           nodeList = response.querySelectorAll('boardgame');
 
@@ -33,10 +31,11 @@ chrome.runtime.onMessage.addListener(function(request) {
             node = nodeList[i];
 
             boardgames.unshift({
-              "name": node.querySelector('name[primary]').innerHTML,
-              "geekRating": node.querySelector('bayesaverage').innerHTML,
-              "userRating": node.querySelector('average').innerHTML,
-              "gameRank": node.querySelector('rank[type=subtype]').getAttribute('value')
+              id: node.getAttribute('objectid'),
+              name: node.querySelector('name[primary]').innerHTML,
+              geekRating: node.querySelector('bayesaverage').innerHTML,
+              userRating: node.querySelector('average').innerHTML,
+              gameRank: node.querySelector('rank[type=subtype]').getAttribute('value')
             });
           }
 
@@ -68,14 +67,14 @@ chrome.runtime.onMessage.addListener(function(request) {
           search_resuts = boardgames.map(function(boardgame) {
             return {
               title: boardgame.name,
-              message: 'Geek Rating: ' + boardgame.geekRating
+              message: boardgame.userRating
             }
           });
           
           opt.type = "list";
           opt.items = search_resuts;
 
-          chrome.notifications.update('' + notificationId, opt, function() {});
+          chrome.notifications.update(notificationId, opt, function() {});
         }
       );
     }

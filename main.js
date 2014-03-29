@@ -1,24 +1,45 @@
 chrome.runtime.onMessage.addListener(function(request) {
   searchTerm = request.bgg.searchTerm;
 
-  var opt = {
-    type: "basic",
-    title: "BGG Search",
-    message: "Searching for: " + searchTerm + "...",
-    iconUrl: "icon.png"
+  var notificationId = undefined;
+  notifyProgress = function(progress, data) {
+    var opt = {
+      type: "progress",
+      title: "BGG Search",
+      message: "Searching for: " + searchTerm + "...",
+      iconUrl: "icon.png",
+      progress: progress
+    }
+    if (progress == 100) {
+      opt.type = "list";
+      opt.items = data;
+      delete opt['progress'];
+      chrome.notifications.clear(notificationId, function() {
+        chrome.notifications.create('', opt, function() {});
+      });
+    }
+    if (notificationId == undefined) {
+      chrome.notifications.create('', opt, function(id) { notificationId = id })
+    } else {
+      chrome.notifications.update('', opt, function() {});
+    }    
   }
 
-  notificationId = '';
-  chrome.notifications.create('', opt, function(id) { notificationId = id });
+  notifyProgress(10);
 
   $.get("http://www.boardgamegeek.com/xmlapi/search",
     { search: searchTerm },
     function(response) {
+
+      notifyProgress(20);
+
       nodeList = response.querySelectorAll('boardgame');
 
       ids = [];
 
       for(var i = nodeList.length; i--; ids.unshift(nodeList[i].getAttribute('objectid')));
+
+      notifyProgress(30);
 
       $.get("http://www.boardgamegeek.com/xmlapi/boardgame/" + ids.join(),
         { stats: 1 },
@@ -26,6 +47,8 @@ chrome.runtime.onMessage.addListener(function(request) {
           nodeList = response.querySelectorAll('boardgame');
 
           boardgames = [];
+
+          notifyProgress(90);
 
           for(var i = nodeList.length; i--; i <= 0) {
             node = nodeList[i];
@@ -70,11 +93,8 @@ chrome.runtime.onMessage.addListener(function(request) {
               message: boardgame.userRating
             }
           });
-          
-          opt.type = "list";
-          opt.items = search_resuts;
 
-          chrome.notifications.update(notificationId, opt, function() {});
+          notifyProgress(100, search_resuts);
         }
       );
     }

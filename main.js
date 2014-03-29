@@ -7,7 +7,7 @@ chrome.runtime.onMessage.addListener(function(request) {
       type: "progress",
       title: "BGG Search",
       message: "Searching for: " + searchTerm + "...",
-      iconUrl: "icon.png",
+      iconUrl: "chess.png",
       progress: progress
     }
     if (progress == 100) {
@@ -90,7 +90,7 @@ chrome.runtime.onMessage.addListener(function(request) {
           search_resuts = boardgames.map(function(boardgame) {
             return {
               title: boardgame.name,
-              message: boardgame.userRating
+              message: Number(boardgame.userRating).toFixed(2)
             }
           });
 

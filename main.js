@@ -50,19 +50,29 @@ chrome.runtime.onMessage.addListener(function(request) {
             return intCompare(aRank, bRank);
           }
 
-          window.games = boardgames.sort(compare).slice(0, 5);
-          console.log(games);
+          boardgames = boardgames.sort(compare).slice(0, 5);
+
+          window.games = boardgames;
+
+          // webkitNotifications.createNotification(
+          //   'icon.png',  // icon url - can be relative
+          //   'Games found:',  // notification title
+          //   "some multi\n line text" // notification body text
+          //   );//.show();
+
+          var opt = {
+            type: "progress",
+            title: "Primary Title",
+            message: "Primary message to display",
+            iconUrl: "icon.png",
+            items: [{ title: "Item1", message: "This is item 1."},
+                    { title: "Item2", message: "This is item 2."},
+                    { title: "Item3", message: "This is item 3."}]
+          }
+
+          chrome.notifications.create('', opt, function() {});
         }
       );
     }
   );
-
-  // if (request.bgg != undefined)
-  //   var search = request.bgg.search
-
-  //   webkitNotifications.createNotification(
-  //    'icon.png',  // icon url - can be relative
-  //    search,  // notification title
-  //    'Searching...'  // notification body text
-  //  ).show();
  });

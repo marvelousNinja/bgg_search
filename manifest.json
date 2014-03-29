@@ -11,10 +11,11 @@
     "<all_urls>"
   ],
   "background": {
-    "scripts": ["main.js"]
+    "scripts": ["jquery.js", "main.js"]
   },
   "content_scripts": [{
     "matches": ["<all_urls>"],
     "js": ["jquery.js", "jquery.textselect.js", "inject.js"]
-  }]
+  }],
+  "web_accessible_resources": ["icon.png"]
 }

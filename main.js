@@ -3,44 +3,51 @@ chrome.runtime.onMessage.addListener(function(request) {
     if (('bgg' in request) && ('searchTerm' in request.bgg)) {
       var searchTerm = request.bgg.searchTerm;
       searchTerm = searchTerm.substring(0, 20);
-      searchTerm = searchTerm.replace(/[&\/\\#,+()$~%.'":*?<>{}]/g, '');
+      searchTerm = searchTerm.replace(/[&\/\\#,+()$~%.'":*?<>{}]/g, '')
+                             .replace(/\s+/g, ' ');
       if (!(searchTerm.length < 2)) {
         return searchTerm;
       }
     }
   }
 
-  var notifyAboutProgress = function(progress, params, notificationId, callback) {
-    params.type = 'progress';
-    params.progress = progress;
-    if (notificationId == undefined) {
-      chrome.notifications.create('', params, callback);
-    } else {
-      chrome.notifications.update(notificationId, params, function() {});
-    }
-  }
-
-  var notifyAboutCompletion = function(data, params, notificationId, callback) {
-    params.type = 'list';
-    params.items = data;
-    chrome.notifications.clear(notificationId, function() {
-      chrome.notifications.create('', params, callback);
-    });
-  }
-
-  var notify = function(progress, searchTerm, notificationId, data, callback) {
+  var notify = function(progress, data) {
     var params = {
       title: 'BGG Search',
-      message: 'Searching for: ' + searchTerm,
+      message: 'Searching for: ' + data.searchTerm,
       iconUrl: 'chess.png'
+    };
+
+    var showNotification = function(params, data) {
+      chrome.notifications.create(data.searchTerm, params, function() {});
     }
 
-    callback = callback || function() {};
+    var clearNotifications = function(data) {
+      chrome.notifications.clear(data.searchTerm, function() {});
+    }
 
-    if (progress < 100) { 
-      notifyAboutProgress(progress, params, notificationId, callback); 
+    var notifyAboutProgress = function(progress, params, data) {
+      params.type = 'progress';
+      params.progress = progress;
+      showNotification(params, data);
+    }
+
+    var notifyAboutCompletion = function(params, data) {
+      if (data.items.length == 0) {
+        params.type = 'basic';
+        params.message = 'No games found: ' + searchTerm;
+      } else {
+        params.type = 'list';
+        params.items = data.items;
+      }
+      clearNotifications(data);
+      showNotification(params, data);
+    }
+
+    if (progress < 100) {
+      notifyAboutProgress(progress, params, data); 
     } else {
-      notifyAboutCompletion(data, params, notificationId, callback);
+      notifyAboutCompletion(params, data);
     }
   }
 
@@ -52,6 +59,7 @@ chrome.runtime.onMessage.addListener(function(request) {
       var nodeList = response.querySelectorAll('boardgame');
       var gameIds = [];
       for(var i = nodeList.length; i--; gameIds.unshift(nodeList[i].getAttribute('objectid')));
+      gameIds = gameIds.slice(0, 15);
       callback(gameIds);        
     });
   }
@@ -78,7 +86,7 @@ chrome.runtime.onMessage.addListener(function(request) {
         });
       }
       callback(gameStats);
-    });
+    }).fail(function() { callback([]) });
   }
 
   var sortGameStats = function(gameStats) {
@@ -131,14 +139,13 @@ chrome.runtime.onMessage.addListener(function(request) {
           gameIds,
           gameStats;
 
-      notify(30, searchTerm, undefined, undefined, function(id) { notificationId = id });
+      notify(30, { searchTerm: searchTerm });
       getGameIds(searchTerm, function(gameIds) {
-        notify(60, searchTerm, notificationId);
+        notify(60, { searchTerm: searchTerm });
         gameStats = getGameStats(gameIds, function(gameStats) {
-          notify(90, searchTerm, notificationId);
           gameStats = sortGameStats(gameStats);
           gameStats = simplifyGameStats(gameStats);
-          notify(100, searchTerm, notificationId, gameStats);  
+          notify(100,  { searchTerm: searchTerm, items: gameStats });
         });
       });
     }

@@ -3,7 +3,7 @@
 
   "name": "BGG Search",
   "description": "View BGG ratings right away!",
-  "version": "0.1",
+  "version": "0.2",
 
   "permissions": [
     "notifications",

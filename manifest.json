@@ -5,6 +5,12 @@
   "description": "View BGG ratings right away!",
   "version": "0.2",
 
+  "icons": {
+    "16": "chess.png",
+    "48": "chess.png",
+   "128": "chess.png"
+  },
+
   "permissions": [
     "notifications",
     "background",
@@ -19,6 +25,7 @@
   },
   "content_scripts": [{
     "matches": ["<all_urls>"],
+    "exclude_matches": ["*://*.github.com/*"],
     "js": ["jquery.js", "jquery.textselect.js", "inject.js"]
   }],
   "web_accessible_resources": ["chess.png"]

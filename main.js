@@ -11,6 +11,13 @@ chrome.runtime.onMessage.addListener(function(request) {
     }
   }
 
+  var notificationsFullySupported = undefined;
+  var checkNotificationsSupport = function() {
+    chrome.runtime.getPlatformInfo(function(info) {
+      notificationsFullySupported = (info.os != 'linux');
+    });
+  }
+
   var notify = function(progress, data) {
     var params = {
       title: 'BGG Search',
@@ -33,15 +40,26 @@ chrome.runtime.onMessage.addListener(function(request) {
     }
 
     var notifyAboutCompletion = function(params, data) {
+      clearNotifications(data);
+
       if (data.items.length == 0) {
         params.type = 'basic';
         params.message = 'No games found: ' + searchTerm;
+        showNotification(params, data);
       } else {
-        params.type = 'list';
-        params.items = data.items;
+        if (notificationsFullySupported) {
+          params.type = 'list';
+          params.items = data.items;
+          showNotification(params, data);
+        } else {
+          params.type = 'basic';
+          data.items.map(function(game) {
+            params.title = game.title;
+            params.message = game.message;
+            showNotification(params, data);
+          });
+        }
       }
-      clearNotifications(data);
-      showNotification(params, data);
     }
 
     if (progress < 100) {
@@ -54,13 +72,13 @@ chrome.runtime.onMessage.addListener(function(request) {
   var getGameIds = function(searchTerm, callback) {
     var searchEndpoint = 'http://www.boardgamegeek.com/xmlapi/search';
     var params = { search: searchTerm };
-    
+
     $.get(searchEndpoint, params, function(response) {
       var nodeList = response.querySelectorAll('boardgame');
       var gameIds = [];
       for(var i = nodeList.length; i--; gameIds.unshift(nodeList[i].getAttribute('objectid')));
       gameIds = gameIds.slice(0, 15);
-      callback(gameIds);        
+      callback(gameIds);
     });
   }
 
@@ -97,7 +115,7 @@ chrome.runtime.onMessage.addListener(function(request) {
     var compare = function(a, b) {
       var aRank = parseInt(a.gameRank);
       var bRank = parseInt(b.gameRank);
-      
+
       // If both games have a BGG rank, compare them
       if (!(isNaN(aRank) || isNaN(bRank))) {
         return intCompare(aRank, bRank);
@@ -139,6 +157,7 @@ chrome.runtime.onMessage.addListener(function(request) {
           gameIds,
           gameStats;
 
+      checkNotificationsSupport();
       notify(30, { searchTerm: searchTerm });
       getGameIds(searchTerm, function(gameIds) {
         notify(60, { searchTerm: searchTerm });
